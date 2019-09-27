@@ -1,0 +1,12 @@
+---
+title: "Homework 2"
+author: "Jessica Lavery"
+date: "9/27/2019"
+output: github_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```

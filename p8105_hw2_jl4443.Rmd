@@ -59,4 +59,43 @@ The trash wheel dataset records trash found in the Harbor by month and year, fro
 
 The precipitation datasets record the amount of precipitation by month and year. Precipitation data was recorded for `r nrow(precip_2017)` months in 2017 and `r nrow(precip_2018)` months in 2018. The average precipitaiton among months recorded across both years was `r mean(pull(precip_2017_2018, precip))` inches (standard deviation `r round(sd(pull(precip_2017_2018, precip)),2)`), ranging from `r min(pull(precip_2017_2018, precip))` to `r max(pull(precip_2017_2018, precip))`. The total precipitation was `r sum(pull(precip_2017, precip))` in 2017 and `r mean(pull(precip_2018, precip))` in 2018. 
 
- 
+# Problem 2
+```{r}
+# read in and clean pols-month data
+pols <- read_csv("./data/pols-month.csv") %>% 
+  separate(col = mon, into = c("year", "month", "day"), sep = '-') %>% 
+  mutate(month = month.abb[as.numeric(month)],
+         president = case_when(
+           prez_gop == 1 ~ "gop",
+           prez_dem == 1 ~ "dem"
+         )) %>% 
+  select(-prez_gop, -prez_dem, -day)
+
+pols
+
+# read in and clean snp data
+snp <- read_csv("./data/snp.csv") %>% 
+  separate(col = date, into = c("month", "day", "year"), sep = '/') %>% 
+  arrange(year, as.numeric(month)) %>% 
+  mutate(month = month.abb[as.numeric(month)]) %>% 
+  select(year, month, close)
+
+snp
+
+# read in and tidy unemployment data
+unemp <- read_csv("./data/unemployment.csv") %>% 
+  janitor::clean_names() %>% 
+  pivot_longer(cols = jan:dec,
+               names_to = "month",
+               values_to = "unemp_rate") %>% 
+  mutate(year = as.character(year),
+         month = str_to_sentence(month))
+
+unemp
+
+# merge snp and pols
+pols_snp <- inner_join(pols, snp, by = c("year", "month"))
+
+pols_snp_unemp <- inner_join(pols_snp, unemp, by = c("year", "month"))
+```
+

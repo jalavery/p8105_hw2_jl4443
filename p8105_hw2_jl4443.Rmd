@@ -12,6 +12,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(readxl)
+library(kableExtra)
+
 ```
 
 # Problem 1
@@ -105,3 +107,57 @@ The pols dataset contains information about the number of national politicians i
 Combining these datasets among years and months that all information is provided (political information, S&P index, and unemployment), we have data for `r min(pull(pols_snp_unemp, year))` - `r max(pull(pols_snp_unemp, year))`. Key information contained in the combined dataset is stored in the variables `r names(pols_snp_unemp)[3:9]` (political), `r names(pols_snp_unemp)[10]` (S&P index at market close), and `r names(pols_snp_unemp)[11]` (unemployment). 
 
 Over this time period, there were `r nrow(pols_snp_unemp %>% filter(president=="dem"))` months with a democratic president and `r nrow(pols_snp_unemp %>% filter(president=="gop"))` months with a republican president. Under democratic presidents, the S&P closing index ranged from `r round(min(pull(pols_snp_unemp %>% filter(president=="dem"), close)), 2)` to `r round(max(pull(pols_snp_unemp %>% filter(president=="dem"), close)), 2)` and unemployment ranged from `r min(pull(pols_snp_unemp  %>% filter(president=="dem"), unemp_rate))`% to `r max(pull(pols_snp_unemp %>% filter(president=="dem"), unemp_rate))`%. Whereas under republican presidents, the S&P closing index ranged from `r round(min(pull(pols_snp_unemp %>% filter(president=="gop"), close)), 2)` to `r round(max(pull(pols_snp_unemp %>% filter(president=="gop"), close)), 2)` and unemployment ranged from `r min(pull(pols_snp_unemp %>% filter(president=="gop"), unemp_rate))`% to `r max(pull(pols_snp_unemp %>% filter(president=="gop"), unemp_rate))`%. 
+
+# Problem 3
+```{r}
+# read in and clean popular baby names data, removing duplicate rows
+baby_names <- read_csv("./data/Popular_Baby_Names.csv") %>%
+  janitor::clean_names() %>% 
+  mutate(gender = str_to_sentence(gender),
+         ethnicity = str_to_title(ethnicity),
+         childs_first_name = str_to_sentence(childs_first_name),
+         ethnicity = recode(ethnicity, 
+                            "White Non Hisp" = "White Non Hispanic",
+                            "Black Non Hisp" = "Black Non Hispanic",
+                            "Asian And Paci" = "Asian And Pacific Islander")) %>% 
+  distinct() %>% 
+  arrange(year_of_birth)
+```
+
+The below table shows the rank of the name Olivia by year and ethnicity.
+```{r}
+# table of popularity (rank) of the name Olivia by year
+olivia <- baby_names %>% 
+  filter(childs_first_name == "Olivia") %>% 
+  select(-gender, -childs_first_name, -count) %>% 
+  pivot_wider(names_from = year_of_birth,
+              values_from = rank)
+
+olivia %>% kable()
+```
+
+The below table shows the most popular baby name among male children by year and ethnicity.
+```{r}
+# most popular name among male children over time
+popular_male <- baby_names %>% 
+  filter(rank == 1, gender == "Male") %>% 
+  select(-gender, -count, -rank) %>% 
+  pivot_wider(names_from = year_of_birth,
+              values_from = childs_first_name)
+
+popular_male %>% kable()
+```
+
+The following scatterplot shows the number of male, white non-hispanic children born in 2016 with a given name against the rank in popularity in that name. 
+
+```{r}
+# male, white non-hispanic children born in 2016
+male_white_2016 <- baby_names %>% 
+  filter(year_of_birth == 2016, gender == "Male", ethnicity == "White Non Hispanic")
+
+ggplot(data = male_white_2016, aes(x = rank, y = count)) +
+  geom_point() + 
+  xlab("Rank of name") +
+  ylab("Number of children with name")
+```
+

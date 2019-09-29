@@ -65,6 +65,7 @@ The precipitation datasets record the amount of precipitation by month and year.
 pols <- read_csv("./data/pols-month.csv") %>% 
   separate(col = mon, into = c("year", "month", "day"), sep = '-') %>% 
   mutate(month = month.abb[as.numeric(month)],
+         year = as.numeric(year), 
          president = case_when(
            prez_gop == 1 ~ "gop",
            prez_dem == 1 ~ "dem"
@@ -77,7 +78,8 @@ pols
 snp <- read_csv("./data/snp.csv") %>% 
   separate(col = date, into = c("month", "day", "year"), sep = '/') %>% 
   arrange(year, as.numeric(month)) %>% 
-  mutate(month = month.abb[as.numeric(month)]) %>% 
+  mutate(month = month.abb[as.numeric(month)],
+         year = as.numeric(year)) %>% 
   select(year, month, close)
 
 snp
@@ -88,8 +90,7 @@ unemp <- read_csv("./data/unemployment.csv") %>%
   pivot_longer(cols = jan:dec,
                names_to = "month",
                values_to = "unemp_rate") %>% 
-  mutate(year = as.character(year),
-         month = str_to_sentence(month))
+  mutate(month = str_to_sentence(month))
 
 unemp
 
@@ -99,3 +100,8 @@ pols_snp <- inner_join(pols, snp, by = c("year", "month"))
 pols_snp_unemp <- inner_join(pols_snp, unemp, by = c("year", "month"))
 ```
 
+The pols dataset contains information about the number of national politicians in each of the two primary parties (democratic, republican) by month and year (`r min(pull(pols, year))` - `r max(pull(pols, year))`). The second data source in problem two (snp) contains the closing Standard and Poor's (S&P) stock market index on the first of the month between `r min(pull(snp, year))` and `r max(pull(snp, year))`. The third dataset of interest (unemp) contains the percentage of unemployment by month from `r min(pull(unemp, year))` through `r max(pull(unemp, year))`.  
+
+Combining these datasets among years and months that all information is provided (political information, S&P index, and unemployment), we have data for `r min(pull(pols_snp_unemp, year))` - `r max(pull(pols_snp_unemp, year))`. Key information contained in the combined dataset is stored in the variables `r names(pols_snp_unemp)[3:9]` (political), `r names(pols_snp_unemp)[10]` (S&P index at market close), and `r names(pols_snp_unemp)[11]` (unemployment). 
+
+Over this time period, there were `r nrow(pols_snp_unemp %>% filter(president=="dem"))` months with a democratic president and `r nrow(pols_snp_unemp %>% filter(president=="gop"))` months with a republican president. Under democratic presidents, the S&P closing index ranged from `r round(min(pull(pols_snp_unemp %>% filter(president=="dem"), close)), 2)` to `r round(max(pull(pols_snp_unemp %>% filter(president=="dem"), close)), 2)` and unemployment ranged from `r min(pull(pols_snp_unemp  %>% filter(president=="dem"), unemp_rate))`% to `r max(pull(pols_snp_unemp %>% filter(president=="dem"), unemp_rate))`%. Whereas under republican presidents, the S&P closing index ranged from `r round(min(pull(pols_snp_unemp %>% filter(president=="gop"), close)), 2)` to `r round(max(pull(pols_snp_unemp %>% filter(president=="gop"), close)), 2)` and unemployment ranged from `r min(pull(pols_snp_unemp %>% filter(president=="gop"), unemp_rate))`% to `r max(pull(pols_snp_unemp %>% filter(president=="gop"), unemp_rate))`%. 
